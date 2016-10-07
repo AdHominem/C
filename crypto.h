@@ -22,27 +22,97 @@ long gcd(long first, long second) {
     return (remainder) == 0 ? second : gcd(second, remainder);
 }
 
-//buggy
-void eea(long first, long second) {
-    assert(first > second && first > 0 && second > 0);
-    long remainder, quotient, old_x = 1, old_y = 0, x = 0, y = 1, temp;
+long gcd_iterative(long rest0, long rest1) {
+    if (rest0 < rest1) {
+        long temp = rest0;
+        rest0 = rest1;
+        rest1 = temp;
+    }
+
+    long current_rest;
 
     do {
-        remainder = first % second;
-        quotient = first / second;
+        current_rest = rest0 % rest1;
+        printf("%5ld %% %4ld = %3ld\n", rest0, rest1, current_rest);
+        rest0 = rest1;
+        rest1 = current_rest;
+    } while (current_rest != 0);
 
-        // Temp is necessary to move values of x and y to old_x and old_y and still use them
-        temp = x;
-        x = old_x - quotient * x;
-        old_x = temp;
-        temp = y;
-        y = old_y - quotient * y;
-        old_y = temp;
+    return rest0;
+}
 
-        printf("%ld \t %ld \t %ld \t %ld \t %ld \t %ld \t\n", first, second, quotient, remainder, x, y);
-        first = second;
-        second = remainder;
-    } while (remainder != 0);
+// Assumes a is the modulus and b the number
+long eea(long a, long b, long *x, long *y)
+{
+    if (a == 0)
+    {
+        *x = 0;
+        *y = 1;
+        return b;
+    }
+
+
+    long x1, y1;
+    long remainder = b % a;
+    long gcd = eea(remainder, a, &x1, &y1);
+    long quotient = b / a;
+
+
+    /* Explanation:
+     * 1) We want x,y so that a * x + b * y = gcd
+     * 2) Then the iteration before is (b % a) * x1 + a * y1 = gcd
+     * 3) b / a is the integer quotient q.
+     * 4) If we multiply q by a, that is the number of a which fit into b
+     * 5) So we can rewrite b % a = b - q * a
+     * 6) This lead to (b - q * a) * x1 + a * y1 = gcd
+     * 7) Which can be rewritten to b * x1 + a * (y1 - q * x1) = gcd
+     * 8) From this equation it follows that:
+     *      x = y1 - q * x1
+     *      y = x1
+     * 9) We see that in each iteration
+     *      - the new y is the old x
+     *      - the new x is the old y minus q times the old x
+     * */
+    *x = y1 - quotient * x1;
+    *y = x1;
+    printf("%4ld \t %4ld \t %4ld / %4ld = %4ld \t %4ld %% %4ld = %4ld \t %4ld \t %4ld\n", a, b, b, a, quotient, b, a, remainder, *x, *y);
+
+    return gcd;
+}
+
+long eea_iterative(long a, long b, long *x, long *y) {
+
+    long x0 = 1, y0 = 0, x1 = 0, y1 = 1;
+    long current_rest, quotient;
+
+    if (b == 0) {
+        *x = 1, *y = 0;
+        return a;
+    }
+
+    while (b > 0) {
+        current_rest = a % b;
+        quotient = a / b;
+        *x = x0 - quotient * x1;
+        *y = y0 - quotient * y1;
+        a = b;
+        b = current_rest;
+        printf("%4ld \t %4ld \t %4ld / %4ld = %4ld \t %4ld %% %4ld = %4ld \t %4ld \t %4ld\n", a, b, a, b, quotient, a, b, current_rest, *x, *y);
+        x0 = x1;
+        x1 = *x;
+        y0 = y1;
+        y1 = *y;
+    }
+
+    *x = x0;
+    *y = y0;
+    return a;
+}
+
+long inverse(long number, long modulus) {
+    long x, y;
+    eea(modulus, number, &x, &y);
+    return y;
 }
 
 // No Erastothenes ;-)
@@ -69,7 +139,7 @@ int euler_phi(int number) {
     return result;
 }
 
-void swap(int *array, size_t first, size_t second) {
+void swap_elements(int *array, size_t first, size_t second) {
     int temp = array[first];
     array[first] = array[second];
     array[second] = temp;
@@ -90,7 +160,7 @@ int *ksa(int *key, size_t key_length, size_t stream_size) {
     size_t j = 0;
     for (size_t i = 0; i < stream_size; ++i) {
         j = (j + result[i] + key[i % key_length]) % stream_size;
-        swap(result, i, j);
+        swap_elements(result, i, j);
     }
 
     return result;
@@ -108,7 +178,7 @@ int *prga(int *stream, size_t stream_length, size_t size) {
 
         i = ++i % stream_length;
         j = (j + stream[i]) % stream_length;
-        swap(stream, i, j);
+        swap_elements(stream, i, j);
         result[k] = stream[(stream[i] + stream[j]) % stream_length];
     }
 

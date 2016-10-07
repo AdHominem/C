@@ -200,28 +200,32 @@
 //}
 
 
-
 int main() {
+    printf("%ld ", inverse(1215,3094));
 
-    int key[] = {1,2,5,4,5,6,7,1};
-    size_t key_length = 8;
-    size_t stream_size = 10;
-    int *ksa_stream = ksa(key, key_length, stream_size);
 
-    printf("KSA stream: ");
-    for (int i = 0; i < stream_size; ++i) {
-        printf("%d ", ksa_stream[i]);
-    }
-
-    size_t key_stream_size = 50;
-    int *key_stream = prga(ksa_stream, stream_size, key_stream_size);
-    free(ksa_stream);
-
-    printf("\nPRGA output: ");
-    for (int i = 0; i < key_stream_size; ++i) {
-        printf("%d ", key_stream[i]);
-    }
-    free(key_stream);
+//    char *text = "Hello World";
+//    printf("%s", shift_cipher(text, 11, 0));
+//
+//    int key[] = {1,2,5,4,5,6,7,1};
+//    size_t key_length = 8;
+//    size_t stream_size = 10;
+//    int *ksa_stream = ksa(key, key_length, stream_size);
+//
+//    printf("KSA stream: ");
+//    for (int i = 0; i < stream_size; ++i) {
+//        printf("%d ", ksa_stream[i]);
+//    }
+//
+//    size_t key_stream_size = 50;
+//    int *key_stream = prga(ksa_stream, stream_size, key_stream_size);
+//    free(ksa_stream);
+//
+//    printf("\nPRGA output: ");
+//    for (int i = 0; i < key_stream_size; ++i) {
+//        printf("%d ", key_stream[i]);
+//    }
+//    free(key_stream);
 }
 
 
