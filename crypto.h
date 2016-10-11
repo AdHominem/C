@@ -162,6 +162,18 @@ int euler_phi(int number) {
     return result;
 }
 
+void prime_factors(long number) {
+    long divisor = 2;
+    while (number > 1) {
+        if (number % divisor == 0) {
+            printf("%ld ", divisor);
+            number = number / divisor;
+        } else {
+            ++divisor;
+        }
+    }
+}
+
 void swap_elements(int *array, size_t first, size_t second) {
     int temp = array[first];
     array[first] = array[second];

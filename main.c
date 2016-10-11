@@ -246,6 +246,8 @@ int main() {
 
     // And finally free the hash value
     free(hash_value);
+
+    prime_factors(25);
 }
 
 
