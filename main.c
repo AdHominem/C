@@ -201,15 +201,10 @@
 
 
 int main() {
-    printf("%ld ", inverse(1215,3094));
 
-
-//    char *text = "Hello World";
-//    printf("%s", shift_cipher(text, 11, 0));
-//
 //    int key[] = {1,2,5,4,5,6,7,1};
 //    size_t key_length = 8;
-//    size_t stream_size = 10;
+//    size_t stream_size = 8;
 //    int *ksa_stream = ksa(key, key_length, stream_size);
 //
 //    printf("KSA stream: ");
@@ -217,7 +212,7 @@ int main() {
 //        printf("%d ", ksa_stream[i]);
 //    }
 //
-//    size_t key_stream_size = 50;
+//    size_t key_stream_size = 20;
 //    int *key_stream = prga(ksa_stream, stream_size, key_stream_size);
 //    free(ksa_stream);
 //
@@ -226,6 +221,31 @@ int main() {
 //        printf("%d ", key_stream[i]);
 //    }
 //    free(key_stream);
+
+    // This is the variable input
+    //char input[] = {0,1,2,3,4,5,6,7,8,9,10};
+    unsigned char input[] = "Hello World how are you today?";
+    size_t input_size = 30;
+
+    // This is the fixed hash size
+    const size_t HASH_SIZE = 8;
+
+    // Allocate memory for the hash value. Could this be a literal value?
+    // Char is probably 8 bit anyways and HASH_SIZE is fixed.
+    unsigned char *hash_value = calloc(HASH_SIZE, sizeof(unsigned char));
+
+
+    printf("Message: ");
+    print_long_array(input, input_size);
+
+    // Now hash the input
+    hash(input, input_size, hash_value, HASH_SIZE);
+
+    printf("Hash: ");
+    print_long_array(hash_value, HASH_SIZE);
+
+    // And finally free the hash value
+    free(hash_value);
 }
 
 

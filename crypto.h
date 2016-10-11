@@ -3,8 +3,31 @@
 //
 
 #include <assert.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <string.h>
+
 #define ASCII_LOWERCASE_OFFSET 'a'
 #define ASCII_UPPERCASE_OFFSET 'A'
+
+
+// ############### HELPER ################
+
+
+size_t random_index() {
+    struct timeval t1;
+    gettimeofday(&t1, NULL);
+    srand((unsigned int) ((t1.tv_usec * t1.tv_sec) + getpid()));
+    return (size_t) rand();
+}
+
+void print_long_array(unsigned char *array, size_t size) {
+
+    for (size_t i = 0; i < size; ++i) {
+        printf("%2x ", array[i]);
+    }
+    printf("\n");
+}
 
 
 // ############### MATH ################
@@ -227,4 +250,59 @@ char *affine_shift_cipher(char *text, size_t length, int a, int b) {
     }
 
     return result;
+}
+
+
+// ############### HASHES ################
+
+
+// Shuffles a given array
+void shuffle(unsigned char *input, size_t size) {
+
+
+    size_t j = 0;
+    for (size_t i = 0; i < size; ++i) {
+
+        // Not cryptographically secure! But does the job
+        j = (j + input[i]) % size;
+
+        //printf("Swapping input[%zu] (%d) with input[%zu] (%d):\t", i, input[i], j, input[j]);
+        //print_long_array(input, size);
+
+        // swap
+        unsigned char temp = input[i];
+        input[i] = input[j];
+        input[j] = temp;
+    }
+}
+
+// Simple (and bad :-) ) hash function which reduces an arbitrarily large array to an 8 byte array
+// Each output byte depends on all preceding output bytes.
+// 1. Preimage resistance: Check
+// 2. Second preimage resistance: Probably not
+// 3. Collision resistance: Hell no!
+void hash(unsigned char *input, size_t input_size, unsigned char *output, size_t output_size) {
+
+    //if input_size < output_size we need to extend input
+    if (input_size < output_size) {
+        unsigned char *extended_input = calloc(output_size, sizeof(unsigned char));
+        memcpy(extended_input, input, input_size);
+        input = extended_input;
+        input_size = output_size;
+        printf("After extending: ");
+        print_long_array(input, input_size);
+
+        shuffle(input, input_size);
+        printf("After shuffling: ");
+        print_long_array(input, input_size);
+    }
+
+
+    unsigned char last_output = input[input_size - 1];
+
+    //generate output, looping over input
+    for (size_t i = 0; i < input_size; ++i) {
+        last_output = output[i % output_size] = input[i] ^ last_output;
+        //printf("current input: %2x, new output[%zu] (and next rounds last_output): %2x\n", input[i], i % output_size, last_output);
+    }
 }
