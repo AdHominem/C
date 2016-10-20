@@ -2,6 +2,7 @@
 // Created by jk on 05.10.16.
 //
 
+#include <math.h>
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -27,6 +28,43 @@ void print_long_array(unsigned char *array, size_t size) {
         printf("%2x ", array[i]);
     }
     printf("\n");
+}
+
+char *byte_to_binary(int x) {
+    assert (x >= 0);
+
+    // Check how many digits the number needs
+    int digits = 0;
+    int number_copy = x;
+    do {
+        number_copy /= 2;
+        ++digits;
+    } while (number_copy != 0);
+
+    char *result = malloc(sizeof(char) * digits + 1);
+    result[0] = '\0';
+
+    for (size_t z = (size_t) pow(2, digits - 1); z > 0; z >>= 1)
+    {
+        strcat(result, ((x & z) == z) ? "1" : "0");
+    }
+
+    return result;
+}
+
+void reverse_string(char *string, size_t length) {
+    assert(length > 1);
+
+    char temp;
+    size_t i = 0, last_index = length - 1;
+
+    do {
+        temp = string[i];
+        string[i] = string[last_index - i];
+        string[last_index - i] = temp;
+        printf("swapping %c with %c... : %s \n", temp, string[i], string);
+        ++i;
+    } while (i < last_index - i);
 }
 
 
@@ -180,6 +218,51 @@ void swap_elements(int *array, size_t first, size_t second) {
     array[second] = temp;
 }
 
+long fast_exponentiation(long base, long exponent, long modulus) {
+    assert(exponent >= 0 && modulus > 0 && base >= 0);
+    long result = 1;
+
+    // Find out how many binary digits we need to check
+    size_t digits = 0;
+    long exponent_copy = exponent;
+    do {
+        exponent_copy /= 2;
+        ++digits;
+    } while (exponent_copy != 0);
+
+    // Iterate over all exponent digits
+    // We will successively create bit masks which are used to check if the exponent bit is 1
+    for (size_t bit_mask = (size_t) pow(2, digits - 1); bit_mask > 0; bit_mask >>= 1) {
+
+        result = result * result % modulus;
+
+        // This bit fiddle checks whether the respective bit in exponent is 1
+        if ((exponent & bit_mask) == bit_mask) {
+            result = result * base % modulus;
+        }
+    }
+
+    return result;
+}
+
+long faster_exponentiation(long base, long exponent, long modulus) {
+    assert(exponent >= 0 && modulus > 0 && base >= 0);
+    long result = 1;
+    long counter = 0;
+
+    while (exponent) {
+        if (exponent & 1) {
+            result = result * base % modulus;
+        }
+        exponent >>= 1;
+        base = base * base % modulus;
+        ++counter;
+    }
+
+    printf("counter: %ld\n", counter);
+    return result;
+}
+
 
 // ############### CIPHERS ################
 
@@ -188,8 +271,8 @@ void swap_elements(int *array, size_t first, size_t second) {
 int *ksa(int *key, size_t key_length, size_t stream_size) {
     int *result = malloc(sizeof(int) * stream_size);
 
-    for (int i = 0; i < stream_size; ++i) {
-        result[i] = i;
+    for (size_t i = 0; i < stream_size; ++i) {
+        result[i] = (int) i;
     }
 
     size_t j = 0;
@@ -206,12 +289,12 @@ int *prga(int *stream, size_t stream_length, size_t size) {
     size_t j = 0, i = 0;
     int *result = malloc(sizeof(int) * size);
 
-    for (int k = 0; k < size; ++k) {
+    for (size_t k = 0; k < size; ++k) {
         assert(j < stream_length);
         assert(i < stream_length);
         assert((stream[i] + stream[j]) % stream_length < stream_length);
 
-        i = ++i % stream_length;
+        i = (i + 1) % stream_length;
         j = (j + stream[i]) % stream_length;
         swap_elements(stream, i, j);
         result[k] = stream[(stream[i] + stream[j]) % stream_length];
@@ -235,7 +318,7 @@ char *shift_cipher(char *text, size_t length, int key) {
 
     char *result = malloc(sizeof(char) * length);
 
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         result[i] = shift_letter(text[i], key);
     }
 
@@ -257,13 +340,33 @@ char *affine_shift_cipher(char *text, size_t length, int a, int b) {
 
     char *result = malloc(sizeof(char) * length);
 
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         result[i] = affine_shift_letter(text[i], a, b);
     }
 
     return result;
 }
 
+void factorize(long number) {
+    for (size_t factor = 2; factor * factor < (size_t) number; ++factor) {
+        // factor must be a prime and evenly divides number
+        if (number % factor == 0) {
+            printf("Found two factors: %ld and %ld\n", factor, number / factor);
+        }
+    }
+}
+
+void rsa_decrypt(unsigned *cipher_text, size_t length, long private_key, long modulus) {
+    for (size_t i = 0; i < length; ++i) {
+        printf("%c", (unsigned char) fast_exponentiation(cipher_text[i], private_key, modulus));
+    }
+}
+
+void rsa_encrypt(unsigned *cipher_text, size_t length, long public_key, long modulus) {
+    for (size_t i = 0; i < length; ++i) {
+        printf("%ld ", fast_exponentiation(cipher_text[i], public_key, modulus));
+    }
+}
 
 // ############### HASHES ################
 
