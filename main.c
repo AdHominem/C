@@ -203,14 +203,14 @@
 
 int main() {
 
-    RSA *rsa = create_rsa(13, 17, 5);
+    RSA *rsa = create_rsa(1171, 3539);
 
-    unsigned cipher[] = {54};
-    rsa_decrypt(cipher, 1, rsa);
+//    unsigned text[] = {'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'};
+//    rsa_encrypt(text, 11, rsa);
 
-//    unsigned text[] = {'a'};
-//    rsa_encrypt(text, 1, 5, 221);
+    long cipher[] = {49984, 94348, 2926108, 2926108, 2845397, 433189, 2587660, 2845397, 3005105, 2926108, 220990};
 
+    rsa_decrypt(cipher, 11, rsa);
 }
 
 

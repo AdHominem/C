@@ -173,7 +173,7 @@ long eea_iterative(long a, long b, long *x, long *y) {
 long inverse(long number, long modulus) {
     long x, y;
     eea(modulus, number, &x, &y);
-    return y;
+    return y > 0 ? y : y + modulus;
 }
 
 // No Erastothenes ;-)
@@ -356,11 +356,20 @@ void factorize(long number) {
     }
 }
 
+long find_small_coprime(long number) {
+    for (int i = 2; i < number; ++i) {
+        if (isPrime(i) && gcd(i, number) == 1) {
+            return i;
+        }
+    }
+    return 1;
+}
+
 typedef struct rsa {
     long p, q, n, m, e, d;
 } RSA;
 
-RSA *create_rsa(long p, long q, long e) {
+RSA *create_rsa(long p, long q) {
 
     RSA *result = malloc(sizeof(RSA));
     if (result == NULL) {
@@ -370,13 +379,15 @@ RSA *create_rsa(long p, long q, long e) {
     result->p = p;
     result->q = q;
     result->n = p * q;
-    result->m = euler_phi(result->n);
-    result->e = e;
-    result->d = inverse(e, result->m);
+    result->m = (p - 1) * (q - 1);
+    result->e = find_small_coprime(result->m);
+    result->d = inverse(result->e, result->m);
+
+    printf("Created a new RSA instance. \nYour modulus is %ld\nphi(n) is %ld\nThe private key is %ld\nAnd the public %ld.\n",
+           result->n, result->m, result->d, result->e);
 
     return result;
 }
-
 
 void destroy_rsa(RSA *rsa) {
     if (rsa != NULL) {
@@ -384,19 +395,20 @@ void destroy_rsa(RSA *rsa) {
     }
 }
 
-void rsa_decrypt(unsigned *cipher_text, size_t length, RSA *rsa) {
+void rsa_decrypt(long *cipher_text, size_t length, RSA *rsa) {
     for (size_t i = 0; i < length; ++i) {
 
-        char input = (char) cipher_text[i];
-        unsigned output;
+        long input = cipher_text[i];
+        long output;
 
         // This is the slower version
-        //output = (unsigned int) fast_exponentiation(input, rsa->d, rsa->n)
+        //output = fast_exponentiation(input, rsa->d, rsa->n);
 
         long xp, xq, yp, yq, dp, dq, cp, cq;
         long p = rsa->p;
         long q = rsa->q;
         long d = rsa->d;
+        long n = rsa->n;
 
         xp = input % p;
         xq = input % q;
@@ -410,15 +422,15 @@ void rsa_decrypt(unsigned *cipher_text, size_t length, RSA *rsa) {
         cp = inverse(q, p);
         cq = inverse(p, q);
 
-        output = (unsigned int) ((q * cp * yp + p * cq * yq) % rsa->n);
+        output = (q * cp  * yp + p * cq * yq) % n;
 
-        printf("%d", (unsigned char) output);
+        printf("%c", (unsigned char) output);
     }
 }
 
-void rsa_encrypt(unsigned *cipher_text, size_t length, long public_key, long modulus) {
+void rsa_encrypt(unsigned *cipher_text, size_t length, RSA *rsa) {
     for (size_t i = 0; i < length; ++i) {
-        printf("%ld ", fast_exponentiation(cipher_text[i], public_key, modulus));
+        printf("%ld ", fast_exponentiation(cipher_text[i], rsa->e, rsa->n));
     }
 }
 
