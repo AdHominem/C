@@ -136,7 +136,7 @@ long eea(long a, long b, long *x, long *y)
      * */
     *x = y1 - quotient * x1;
     *y = x1;
-    printf("%4ld \t %4ld \t %4ld / %4ld = %4ld \t %4ld %% %4ld = %4ld \t %4ld \t %4ld\n", a, b, b, a, quotient, b, a, remainder, *x, *y);
+    //printf("%4ld \t %4ld \t %4ld / %4ld = %4ld \t %4ld %% %4ld = %4ld \t %4ld \t %4ld\n", a, b, b, a, quotient, b, a, remainder, *x, *y);
 
     return gcd;
 }
@@ -177,7 +177,7 @@ long inverse(long number, long modulus) {
 }
 
 // No Erastothenes ;-)
-int isPrime(int number) {
+long isPrime(long number) {
     int i;
     for (i = 2; i * i <= number; ++i) {
         if (number % i == 0) return 0;
@@ -186,12 +186,12 @@ int isPrime(int number) {
 }
 
 // This could be faster by checking if number is a multiple of a prime
-int euler_phi(int number) {
+long euler_phi(long number) {
     if (isPrime(number)) return number - 1;
 
-    int result = 0;
+    size_t result = 0;
 
-    for (int i = 1; i < number; ++i) {
+    for (size_t i = 1; i < (size_t) number; ++i) {
         if (gcd(i, number) == 1) {
             result++;
         }
@@ -356,9 +356,63 @@ void factorize(long number) {
     }
 }
 
-void rsa_decrypt(unsigned *cipher_text, size_t length, long private_key, long modulus) {
+typedef struct rsa {
+    long p, q, n, m, e, d;
+} RSA;
+
+RSA *create_rsa(long p, long q, long e) {
+
+    RSA *result = malloc(sizeof(RSA));
+    if (result == NULL) {
+        return NULL;
+    }
+
+    result->p = p;
+    result->q = q;
+    result->n = p * q;
+    result->m = euler_phi(result->n);
+    result->e = e;
+    result->d = inverse(e, result->m);
+
+    return result;
+}
+
+
+void destroy_rsa(RSA *rsa) {
+    if (rsa != NULL) {
+        free(rsa);
+    }
+}
+
+void rsa_decrypt(unsigned *cipher_text, size_t length, RSA *rsa) {
     for (size_t i = 0; i < length; ++i) {
-        printf("%c", (unsigned char) fast_exponentiation(cipher_text[i], private_key, modulus));
+
+        char input = (char) cipher_text[i];
+        unsigned output;
+
+        // This is the slower version
+        //output = (unsigned int) fast_exponentiation(input, rsa->d, rsa->n)
+
+        long xp, xq, yp, yq, dp, dq, cp, cq;
+        long p = rsa->p;
+        long q = rsa->q;
+        long d = rsa->d;
+
+        xp = input % p;
+        xq = input % q;
+
+        dp = d % (p - 1);
+        dq = d % (q - 1);
+
+        yp = fast_exponentiation(xp, dp, p);
+        yq = fast_exponentiation(xq, dq, q);
+
+        cp = inverse(q, p);
+        cq = inverse(p, q);
+
+        output = (unsigned int) ((q * cp * yp + p * cq * yq) % rsa->n);
+
+        printf("%d", (unsigned char) output);
     }
 }
 

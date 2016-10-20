@@ -203,11 +203,13 @@
 
 int main() {
 
-    unsigned cipher[] = {93, 597, 211, 254, 1190, 934, 793, 880, 894};
-    rsa_decrypt(cipher, 9, 229, 1219);
+    RSA *rsa = create_rsa(13, 17, 5);
 
-    unsigned text[] = {'F', 'r', 'i', 't', 'z', 'C', 'o', 'l', 'a'};
-    rsa_encrypt(text, 9, 5, 1219);
+    unsigned cipher[] = {54};
+    rsa_decrypt(cipher, 1, rsa);
+
+//    unsigned text[] = {'a'};
+//    rsa_encrypt(text, 1, 5, 221);
 
 }
 
