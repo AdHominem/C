@@ -3,6 +3,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define ASCII_LOWERCASE_OFFSET 'a'
 #define ASCII_UPPERCASE_OFFSET 'A'
@@ -21,7 +22,15 @@ size_t random_index() {
 void print_long_array(unsigned char *array, size_t size) {
 
     for (size_t i = 0; i < size; ++i) {
-        printf("%2x ", array[i]);
+        printf("%02x ", array[i]);
+    }
+    printf("\n");
+}
+
+void print_int_array(int *array, size_t size) {
+
+    for (size_t i = 0; i < size; ++i) {
+        printf("%02x ", array[i]);
     }
     printf("\n");
 }
@@ -61,6 +70,13 @@ void reverse_string(char *string, size_t length) {
         printf("swapping %c with %c... : %s \n", temp, string[i], string);
         ++i;
     } while (i < last_index - i);
+}
+
+int *concatenate_bytes(int *first, size_t first_length, int *second, size_t second_length) {
+    int *result = malloc(sizeof(int) * (first_length + second_length));
+    memcpy(result, first, first_length);
+    //memcpy(result + first_length * sizeof(int), second, second_length);
+    return result;
 }
 
 
@@ -259,9 +275,76 @@ long faster_exponentiation(long base, long exponent, long modulus) {
     return result;
 }
 
+void factorize(long number) {
+    for (size_t factor = 2; factor * factor < (size_t) number; ++factor) {
+        // factor must be a prime and evenly divides number
+        if (number % factor == 0) {
+            printf("Found two factors: %ld and %ld\n", factor, number / factor);
+        }
+    }
+}
+
+long find_small_coprime(long number) {
+    for (int i = 2; i < number; ++i) {
+        if (isPrime(i) && gcd(i, number) == 1) {
+            return i;
+        }
+    }
+    return 1;
+}
+
 
 // ############### CIPHERS ################
 
+// Shift cipher
+
+char shift_letter(char letter, int key) {
+    assert(key >= 0 && key <= 25);
+
+    int isLowerCase = letter >= 'a' && letter <= 'z';
+    int isUpperCase = letter >= 'A' && letter <= 'Z';
+    char offset = (char) (isLowerCase ? ASCII_LOWERCASE_OFFSET : ASCII_UPPERCASE_OFFSET);
+
+    return (isLowerCase || isUpperCase) ? (char) ((letter + key - offset) % 26 + offset) : letter;
+}
+
+char *shift_cipher(char *text, size_t length, int key) {
+    assert(key >= 0 && key <= 25);
+
+    char *result = malloc(sizeof(char) * length);
+
+    for (size_t i = 0; i < length; ++i) {
+        result[i] = shift_letter(text[i], key);
+    }
+
+    return result;
+}
+
+// Affine cipher
+
+char affine_shift_letter(char letter, int a, int b) {
+    assert(gcd(26, a) == 1 && b < 26 && b >= 0);
+
+    int isLowerCase = letter >= 'a' && letter <= 'z';
+    int isUpperCase = letter >= 'A' && letter <= 'Z';
+    char offset = (char) (isLowerCase ? ASCII_LOWERCASE_OFFSET : ASCII_UPPERCASE_OFFSET);
+
+    return (isLowerCase || isUpperCase) ? (char) ((a * (letter - offset) + b) % 26 + offset) : letter;
+}
+
+char *affine_shift_cipher(char *text, size_t length, int a, int b) {
+    assert(gcd(26, a) == 1 && b < 26 && b >= 0);
+
+    char *result = malloc(sizeof(char) * length);
+
+    for (size_t i = 0; i < length; ++i) {
+        result[i] = affine_shift_letter(text[i], a, b);
+    }
+
+    return result;
+}
+
+// RC4
 
 // Generates an identity permutation of array of size n, using a specified key
 int *ksa(int *key, size_t key_length, size_t stream_size) {
@@ -299,67 +382,14 @@ int *prga(int *stream, size_t stream_length, size_t size) {
     return result;
 }
 
-char shift_letter(char letter, int key) {
-    assert(key >= 0 && key <= 25);
+// WEP
 
-    int isLowerCase = letter >= 'a' && letter <= 'z';
-    int isUpperCase = letter >= 'A' && letter <= 'Z';
-    char offset = (char) (isLowerCase ? ASCII_LOWERCASE_OFFSET : ASCII_UPPERCASE_OFFSET);
+typedef struct wep {
 
-    return (isLowerCase || isUpperCase) ? (char) ((letter + key - offset) % 26 + offset) : letter;
-}
+} WEP;
 
-char *shift_cipher(char *text, size_t length, int key) {
-    assert(key >= 0 && key <= 25);
 
-    char *result = malloc(sizeof(char) * length);
-
-    for (size_t i = 0; i < length; ++i) {
-        result[i] = shift_letter(text[i], key);
-    }
-
-    return result;
-}
-
-char affine_shift_letter(char letter, int a, int b) {
-    assert(gcd(26, a) == 1 && b < 26 && b >= 0);
-
-    int isLowerCase = letter >= 'a' && letter <= 'z';
-    int isUpperCase = letter >= 'A' && letter <= 'Z';
-    char offset = (char) (isLowerCase ? ASCII_LOWERCASE_OFFSET : ASCII_UPPERCASE_OFFSET);
-
-    return (isLowerCase || isUpperCase) ? (char) ((a * (letter - offset) + b) % 26 + offset) : letter;
-}
-
-char *affine_shift_cipher(char *text, size_t length, int a, int b) {
-    assert(gcd(26, a) == 1 && b < 26 && b >= 0);
-
-    char *result = malloc(sizeof(char) * length);
-
-    for (size_t i = 0; i < length; ++i) {
-        result[i] = affine_shift_letter(text[i], a, b);
-    }
-
-    return result;
-}
-
-void factorize(long number) {
-    for (size_t factor = 2; factor * factor < (size_t) number; ++factor) {
-        // factor must be a prime and evenly divides number
-        if (number % factor == 0) {
-            printf("Found two factors: %ld and %ld\n", factor, number / factor);
-        }
-    }
-}
-
-long find_small_coprime(long number) {
-    for (int i = 2; i < number; ++i) {
-        if (isPrime(i) && gcd(i, number) == 1) {
-            return i;
-        }
-    }
-    return 1;
-}
+// RSA
 
 typedef struct rsa {
     long p, q, n, m, e, d;
