@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #define ASCII_LOWERCASE_OFFSET 'a'
 #define ASCII_UPPERCASE_OFFSET 'A'
@@ -32,6 +33,38 @@ void print_long_array(unsigned char *array, size_t size) {
 
 // ############### MATH ################
 
+/// First turns a long into a binary string representation
+/// \param base
+/// \param exponent
+/// \return
+size_t fast_modulo_exponentiation(size_t base, size_t exponent, size_t modulus) {
+    assert(exponent > 0 && base > 0);
+
+    // Determine how many chars are necessary to represent the number
+    size_t necessary_chars = 1;
+    while (exponent >= pow(2, necessary_chars)) {
+        ++necessary_chars;
+    }
+
+    char binary_exponent[necessary_chars + 1];
+    binary_exponent[necessary_chars] = '\x00';
+
+    for (size_t i = necessary_chars; i-- > 0; ) {
+        binary_exponent[i] = (char) (exponent % 2 == 0 ? '0' : '1');
+        exponent >>= 1;
+    }
+
+    size_t result = 1;
+
+    for (size_t i = 0; i < necessary_chars; ++i) {
+        result = (result * result) % modulus;
+        if (binary_exponent[i] == '1') {
+            result = (result * base) % modulus;
+        }
+    }
+
+    return result;
+}
 
 long gcd(long first, long second) {
     if (first < second) {
@@ -41,7 +74,7 @@ long gcd(long first, long second) {
     }
 
     long remainder = first % second;
-    //printf("%ld %% %ld = %ld\n", first, second, remainder);
+    printf("%ld %% %ld = %ld\n", first, second, remainder);
     return (remainder) == 0 ? second : gcd(second, remainder);
 }
 
@@ -150,6 +183,8 @@ int isPrime(int number) {
 // This could be faster by checking if number is a multiple of a prime
 int euler_phi(int number) {
     if (isPrime(number)) return number - 1;
+
+    //insert check whether is multiple of prime
 
     int result = 0;
 
