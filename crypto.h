@@ -1,12 +1,9 @@
-//
-// Created by jk on 05.10.16.
-//
-
 #include <assert.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #define ASCII_LOWERCASE_OFFSET 'a'
 #define ASCII_UPPERCASE_OFFSET 'A'
@@ -40,17 +37,14 @@ void print_long_array(unsigned char *array, size_t size) {
 size_t fast_modulo_exponentiation(size_t base, size_t exponent, size_t modulus) {
     assert(exponent > 0 && base > 0);
 
-    // Determine how many chars are necessary to represent the number
-    size_t necessary_chars = 1;
-    while (exponent >= pow(2, necessary_chars)) {
-        ++necessary_chars;
-    }
+    // The bit length of the exponent is ceil(log2(exponent)))
+    size_t necessary_chars = (size_t) ceil(log2(exponent));
 
     char binary_exponent[necessary_chars + 1];
     binary_exponent[necessary_chars] = '\x00';
 
     for (size_t i = necessary_chars; i-- > 0; ) {
-        binary_exponent[i] = (char) (exponent % 2 == 0 ? '0' : '1');
+        binary_exponent[i] = exponent % 2 == 0 ? '0' : '1';
         exponent >>= 1;
     }
 
@@ -208,39 +202,42 @@ void swap_elements(int *array, size_t first, size_t second) {
 
 
 // Generates an identity permutation of array of size n, using a specified key
-int *ksa(int *key, size_t key_length, size_t stream_size) {
-    int *result = malloc(sizeof(int) * stream_size);
+int key_scheduling_algorithm(int *key, size_t key_length, size_t *stream, size_t stream_size) {
 
-    for (int i = 0; i < stream_size; ++i) {
-        result[i] = i;
+    for (size_t i = 0; i < stream_size; ++i) {
+        stream[i] = i;
     }
 
     size_t j = 0;
     for (size_t i = 0; i < stream_size; ++i) {
-        j = (j + result[i] + key[i % key_length]) % stream_size;
-        swap_elements(result, i, j);
+        j = (j + stream[i] + key[i % key_length]) % stream_size;
+        size_t temp = stream[i];
+        stream[i] = stream[j];
+        stream[j] = temp;
     }
 
-    return result;
+    return 0;
 }
 
 // Creates a key stream array of specified size
-int *prga(int *stream, size_t stream_length, size_t size) {
+int pseudo_random_generation_algorithm(size_t *stream, size_t stream_length, size_t *key_stream, size_t key_stream_size) {
     size_t j = 0, i = 0;
-    int *result = malloc(sizeof(int) * size);
 
-    for (int k = 0; k < size; ++k) {
+    for (size_t k = 0; k < key_stream_size; ++k) {
         assert(j < stream_length);
         assert(i < stream_length);
         assert((stream[i] + stream[j]) % stream_length < stream_length);
 
-        i = ++i % stream_length;
+        i = (i + 1) % stream_length;
         j = (j + stream[i]) % stream_length;
-        swap_elements(stream, i, j);
-        result[k] = stream[(stream[i] + stream[j]) % stream_length];
+        size_t temp = stream[i];
+        stream[i] = stream[j];
+        stream[j] = temp;
+
+        key_stream[k] = stream[(stream[i] + stream[j]) % stream_length];
     }
 
-    return result;
+    return 0;
 }
 
 char shift_letter(char letter, int key) {
@@ -258,7 +255,7 @@ char *shift_cipher(char *text, size_t length, int key) {
 
     char *result = malloc(sizeof(char) * length);
 
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         result[i] = shift_letter(text[i], key);
     }
 
@@ -280,7 +277,7 @@ char *affine_shift_cipher(char *text, size_t length, int a, int b) {
 
     char *result = malloc(sizeof(char) * length);
 
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         result[i] = affine_shift_letter(text[i], a, b);
     }
 
